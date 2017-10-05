@@ -51,7 +51,7 @@
     <StartupObject>SDownloader.Program</StartupObject>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationIcon>Info\666.ico</ApplicationIcon>
+    <ApplicationIcon>Info\icon.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -66,7 +66,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Event\OnFetchedEventArgs.cs" />
+    <Compile Include="Event\EventArgs.cs" />
     <Compile Include="Models\NetworkSpeed.cs" />
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>
@@ -86,13 +86,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Info\App.config" />
-    <None Include="Info\packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Info\666.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <WCFMetadata Include="Service References\" />
+    <Content Include="Info\icon.ico" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.5.2">
