@@ -1,0 +1,21 @@
+d:\Users\张泊明\documents\visual studio 2015\Projects\HSpider\HSpider\bin\Debug\SDownloader.exe.config
+d:\Users\张泊明\documents\visual studio 2015\Projects\HSpider\HSpider\bin\Debug\SDownloader.exe
+d:\Users\张泊明\documents\visual studio 2015\Projects\HSpider\HSpider\bin\Debug\SDownloader.pdb
+d:\Users\张泊明\documents\visual studio 2015\Projects\HSpider\HSpider\bin\Debug\HtmlAgilityPack.dll
+d:\Users\张泊明\documents\visual studio 2015\Projects\HSpider\HSpider\bin\Debug\HtmlAgilityPack.pdb
+d:\Users\张泊明\documents\visual studio 2015\Projects\HSpider\HSpider\bin\Debug\HtmlAgilityPack.xml
+d:\Users\张泊明\documents\visual studio 2015\Projects\HSpider\HSpider\obj\Debug\SDownloader.Form1.resources
+d:\Users\张泊明\documents\visual studio 2015\Projects\HSpider\HSpider\obj\Debug\SDownloader.csproj.GenerateResource.Cache
+d:\Users\张泊明\documents\visual studio 2015\Projects\HSpider\HSpider\obj\Debug\SDownloader.exe
+d:\Users\张泊明\documents\visual studio 2015\Projects\HSpider\HSpider\obj\Debug\SDownloader.pdb
+d:\Users\张泊明\Documents\GitHub\Strange-Downloader\SDownloader\bin\Debug\SDownloader.exe.config
+d:\Users\张泊明\Documents\GitHub\Strange-Downloader\SDownloader\obj\Debug\SDownloader.exe
+d:\Users\张泊明\Documents\GitHub\Strange-Downloader\SDownloader\obj\Debug\SDownloader.pdb
+d:\Users\张泊明\Documents\GitHub\Strange-Downloader\SDownloader\bin\Debug\SDownloader.exe
+d:\Users\张泊明\Documents\GitHub\Strange-Downloader\SDownloader\bin\Debug\SDownloader.pdb
+d:\Users\张泊明\Documents\GitHub\Strange-Downloader\SDownloader\obj\Debug\SDownloader.csprojResolveAssemblyReference.cache
+d:\Users\张泊明\Documents\GitHub\Strange-Downloader\SDownloader\obj\Debug\SDownloader.Form1.resources
+d:\Users\张泊明\Documents\GitHub\Strange-Downloader\SDownloader\obj\Debug\SDownloader.csproj.GenerateResource.Cache
+d:\Users\张泊明\Documents\GitHub\Strange-Downloader1\SDownloader\bin\Debug\SDownloader.exe.config
+d:\Users\张泊明\Documents\GitHub\Strange-Downloader1\SDownloader\obj\Debug\SDownloader.exe
+d:\Users\张泊明\Documents\GitHub\Strange-Downloader1\SDownloader\obj\Debug\SDownloader.pdb

@@ -1,0 +1,8 @@
+d:\Users\张泊明\Documents\GitHub\Strange-Downloader\SDownloader\bin\Release\SDownloader.exe.config
+d:\Users\张泊明\Documents\GitHub\Strange-Downloader\SDownloader\obj\Release\SDownloader.exe
+d:\Users\张泊明\Documents\GitHub\Strange-Downloader\SDownloader\obj\Release\SDownloader.pdb
+d:\Users\张泊明\Documents\GitHub\Strange-Downloader\SDownloader\bin\Release\SDownloader.exe
+d:\Users\张泊明\Documents\GitHub\Strange-Downloader\SDownloader\bin\Release\SDownloader.pdb
+d:\Users\张泊明\Documents\GitHub\Strange-Downloader\SDownloader\obj\Release\SDownloader.csprojResolveAssemblyReference.cache
+d:\Users\张泊明\Documents\GitHub\Strange-Downloader\SDownloader\obj\Release\SDownloader.Form1.resources
+d:\Users\张泊明\Documents\GitHub\Strange-Downloader\SDownloader\obj\Release\SDownloader.csproj.GenerateResource.Cache
