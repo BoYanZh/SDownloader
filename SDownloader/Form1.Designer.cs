@@ -69,7 +69,6 @@
             // 
             // DSButton
             // 
-            this.DSButton.Enabled = false;
             this.DSButton.Location = new System.Drawing.Point(323, 12);
             this.DSButton.Name = "DSButton";
             this.DSButton.Size = new System.Drawing.Size(300, 23);

@@ -47,11 +47,14 @@ namespace SDownloader {
                     di.Delete(true);
                     Console.WriteLine(myPath);
                 }*/
+                bool isDelete = false;
                 long re = GetDirectory(myPath, getMode.count);
                 if (re < 6) {
                     Console.WriteLine(myPath + " " + re);
-                    DirectoryInfo di = new DirectoryInfo(myPath);
-                    di.Delete(true);
+                    isDelete = true;
+                }
+                if (myPath.IndexOf(@"GIF") != -1) {
+                    isDelete = true;
                 }
                 /*Console.WriteLine(myPath + " " + (myPath.IndexOf(@"【图吧水印】")) + " "  + Directory.Exists(myPath).ToString());
                 if (myPath.IndexOf(@"【图吧水印】") != -1 && Directory.Exists(myPath))
@@ -59,6 +62,10 @@ namespace SDownloader {
                     Console.WriteLine(myPath.Replace("【图吧水印】", ""));
                     System.IO.Directory.Move(myPath,myPath.Replace("【图吧水印】", ""));
                 }*/
+                if (isDelete) {
+                    DirectoryInfo di = new DirectoryInfo(myPath);
+                    di.Delete(true);
+                }
             }
         }
         /// <summary>

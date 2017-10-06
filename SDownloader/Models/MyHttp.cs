@@ -178,7 +178,7 @@ namespace SDownloader
                     watch.Start();
                     if (path.Equals("")) throw new Exception("未指定保存文件的路径");
                     string imgName = imgUrl.ToString().Substring(imgUrl.ToString().LastIndexOf("/") + 1);
-                    string imgType = imgUrl.ToString().Substring(imgUrl.ToString().LastIndexOf("."));
+                    string imgType = "";
                     HttpHelper http = new HttpHelper();
                     HttpItem item = new HttpItem() {
                         URL = imgUrl,//URL     必需项    
@@ -193,6 +193,7 @@ namespace SDownloader
                         ResultType = ResultType.Byte
                     };
                     HttpResult result = http.GetHtml(item);
+                    
                     watch.Stop();
                     if(result.ResultByte == null) { throw new Exception(result.Html); }
                     NetworkSpeed.Increment(result.ResultByte.Length);
@@ -200,24 +201,26 @@ namespace SDownloader
                     if (fileName == "") fileName = imgName.Substring(0, imgName.ToString().LastIndexOf("."));
                     //if (File.Exists(path + fileName + imgType)) File.Delete(path + fileName + imgType);
                     using (Image resultImg = byteArrayToImage(result.ResultByte)) {
-                        switch (imgType) {
-                            case ".bmp":
-                                resultImg.Save(path + fileName + imgType, System.Drawing.Imaging.ImageFormat.Bmp);
-                                break;
-                            case ".jpg":
-                                resultImg.Save(path + fileName + imgType, System.Drawing.Imaging.ImageFormat.Jpeg);
-                                break;
-                            case ".gif":
-                                resultImg.Save(path + fileName + imgType, System.Drawing.Imaging.ImageFormat.Gif);
-                                break;
-                            case ".tif":
-                                resultImg.Save(path + fileName + imgType, System.Drawing.Imaging.ImageFormat.Tiff);
-                                break;
-                            case ".png":
-                                resultImg.Save(path + fileName + imgType, System.Drawing.Imaging.ImageFormat.Png);
-                                break;
-                            default:
-                                break;
+                        if (resultImg.RawFormat.Equals(System.Drawing.Imaging.ImageFormat.Jpeg)) {
+                            imgType = ".jpg";
+                            resultImg.Save(path + fileName + imgType, System.Drawing.Imaging.ImageFormat.Jpeg);
+                        } else if (resultImg.RawFormat.Equals(System.Drawing.Imaging.ImageFormat.Bmp)) {
+                            imgType = ".bmp";
+                            resultImg.Save(path + fileName + imgType, System.Drawing.Imaging.ImageFormat.Bmp);
+                        } else if (resultImg.RawFormat.Equals(System.Drawing.Imaging.ImageFormat.Gif)) {
+                            imgType = ".gif";
+                            resultImg.Save(path + fileName + imgType, System.Drawing.Imaging.ImageFormat.Gif);
+                        } else if (resultImg.RawFormat.Equals(System.Drawing.Imaging.ImageFormat.Tiff)) {
+                            imgType = ".tif";
+                            resultImg.Save(path + fileName + imgType, System.Drawing.Imaging.ImageFormat.Tiff);
+                        } else if (resultImg.RawFormat.Equals(System.Drawing.Imaging.ImageFormat.Png)) {
+                            imgType = ".png";
+                            resultImg.Save(path + fileName + imgType, System.Drawing.Imaging.ImageFormat.Png);
+                        } else if (resultImg.RawFormat.Equals(System.Drawing.Imaging.ImageFormat.Wmf)) {
+                            imgType = ".wmf";
+                            resultImg.Save(path + fileName + imgType, System.Drawing.Imaging.ImageFormat.Wmf);
+                        } else {
+                            throw new Exception("Invalid image type");
                         }
                     }
                     return "Name:" + fileName + imgType + " Time:" + milliseconds + "ms";

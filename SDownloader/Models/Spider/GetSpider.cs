@@ -9,8 +9,7 @@ using SDownloader.Event;
 
 namespace SDownloader
 {
-    public class GetSpider
-    {
+    public class GetSpider {
         private const int MAX_WAIT_COUNT = 20;             //最大等待页面
         private const int MAX_INVALID_PAGE_COUNT = 5;      //最大空页数量
         private const bool JUMP_REPEATED_PAGE = true;      //是否跳过重复
@@ -28,8 +27,7 @@ namespace SDownloader
         public SpiderSettings Settings { get; private set; }
         public event EventHandler<OnFetchedEventArgs> OnPageFetched;
         public event EventHandler<OnFinishedEventArgs> OnPageFinished;
-        public struct ImgInfo
-        {
+        public struct ImgInfo {
             public string[] imgUrl;
             public string title;
             public string picIndex;
@@ -93,13 +91,15 @@ namespace SDownloader
         private void fetchAllPages() {
             myWriteLine("Task:Fetch All Pages Start", ConsoleColor.Yellow);
             long invalidPageCount = 0, pageIndex = startPage;
+            bool isLastPageInvalid = false;
             for (; pageIndex <= endPage & !workFinishFlag; pageIndex++) {
                 string myUrl = MyWebSiteInfo.urlConvert(domain, imgType, pageIndex); //得出url
                 myWriteLine("Fetch Index Page Started[" + pageIndex + "]");           //
                 string myHtml = MyHttp.getHtml(myUrl, out cookies);                   //获取html
                 string[] myPage = MyWebSiteInfo.pageReg(myHtml);                      //获取页面链接
                 if (myPage.Length <= 0) {                                             //检测空页
-                    invalidPageCount++;                                               //
+                    invalidPageCount = isLastPageInvalid ? ++invalidPageCount : 1;
+                    isLastPageInvalid = true;
                     myWriteLine("Fetch Index Page Invalid[" + pageIndex + "]", ConsoleColor.Red);
                     if (invalidPageCount >= MAX_INVALID_PAGE_COUNT) {                 //空页过多退出
                         workFinishFlag = true;
@@ -107,14 +107,17 @@ namespace SDownloader
                         break;
                     }
                 } else {
-                    fetchImgUrlFromPage(myPage);
+                    myWriteLine("Fetch Index Page Successful[" + pageIndex + "]");
+                    isLastPageInvalid = false;
+                    fetchImgUrlFromIndexPage(myPage);
                 }
             }
             fetchIndexPageFlag = true;
             myWriteLine("Task:Fetch All Index Pages Finish", ConsoleColor.Yellow);
         }
         public void test() {
-            parseLinks(new Uri("https://www.ttt866.com/htm/piclist4/"));
+            //parseLinks(new Uri("https://www.ttt866.com/htm/piclist4/"));
+            fetchImgFromPage("http://www.dazhuazhi.com/nr/1-1-63/10014640.html", "10014640");
         }
         private void parseLinks(Uri uri) {
             string html = MyHttp.getHtml(uri.AbsoluteUri);
@@ -175,7 +178,7 @@ namespace SDownloader
                 }
             }
         }
-        private void fetchImgUrlFromPage(string[] page) {
+        private void fetchImgUrlFromIndexPage(string[] page) {
             foreach (string pageUrl in page) {
                 do {
                 } while (fetchPageCount - finishPageCount >= MAX_WAIT_COUNT && !workFinishFlag);
@@ -188,20 +191,25 @@ namespace SDownloader
                 {
                     myWriteLine("Fetch Page Jumped:Index[" + picIndex + "]", ConsoleColor.Red);
                 } else {
-                    string myPageHtml = MyHttp.getHtml(myPageUrl, out cookies);//获取图片url列表
-                    string[] imgUrl = MyWebSiteInfo.imgReg(myPageHtml);//获取图片url
-                    if (imgUrl.Length > 0) {
-                        string myTitle = getValidFileName(MyHttp.getHtmlTitle(myPageHtml));//获取合法标题
-                        myWriteLine("Fetch Page Successful:Index[" + picIndex + "]Title:" + myTitle);
-                        if (!Directory.Exists(savePath + picIndex + "-" + myTitle + @"\")) Directory.CreateDirectory(savePath + picIndex + "-" + myTitle + @"\");//创建文件目录
-                        lock (addListLocker) {
-                            ImgInfo tmpImgInfo = new ImgInfo(imgUrl, myTitle, picIndex, new MyHttp.httpParameter(cookies, "", myPageUrl));
-                            fetchPageCount++;//计算获取页面数
-                            fetchImgCount += imgUrl.Length;//计算获取图片数
-                            OnPageFetched(null, new OnFetchedEventArgs(tmpImgInfo));
-                        }
-                    }
+                    fetchImgFromPage(myPageUrl, picIndex);
                 }
+            }
+        }
+        private void fetchImgFromPage(string pageUrl,string picIndex) {
+            string myPageHtml = MyHttp.getHtml(pageUrl, out cookies);//获取图片url列表
+            string[] imgUrl = MyWebSiteInfo.imgReg(myPageHtml);//获取图片url
+            string myTitle = getValidFileName(MyHttp.getHtmlTitle(myPageHtml));//获取合法标题
+            if (imgUrl.Length > 0) {
+                myWriteLine("Fetch Page Successful:Index[" + picIndex + "]Title:" + myTitle);
+                if (!Directory.Exists(savePath + picIndex + "-" + myTitle + @"\")) Directory.CreateDirectory(savePath + picIndex + "-" + myTitle + @"\");//创建文件目录
+                lock (addListLocker) {
+                    ImgInfo tmpImgInfo = new ImgInfo(imgUrl, myTitle, picIndex, new MyHttp.httpParameter(cookies, "", pageUrl));
+                    fetchPageCount++;//计算获取页面数
+                    fetchImgCount += imgUrl.Length;//计算获取图片数
+                    OnPageFetched(null, new OnFetchedEventArgs(tmpImgInfo));
+                }
+            } else {
+                myWriteLine("Fetch Page Invalid:Index[" + picIndex + "]Title:" + myTitle, ConsoleColor.Red);
             }
         }
         private string getValidFileName(string fileName) {
