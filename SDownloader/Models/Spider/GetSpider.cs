@@ -201,7 +201,6 @@ namespace SDownloader
             string myTitle = getValidFileName(MyHttp.getHtmlTitle(myPageHtml));//获取合法标题
             if (imgUrl.Length > 0) {
                 myWriteLine("Fetch Page Successful:Index[" + picIndex + "]Title:" + myTitle);
-                if (!Directory.Exists(savePath + picIndex + "-" + myTitle + @"\")) Directory.CreateDirectory(savePath + picIndex + "-" + myTitle + @"\");//创建文件目录
                 lock (addListLocker) {
                     ImgInfo tmpImgInfo = new ImgInfo(imgUrl, myTitle, picIndex, new MyHttp.httpParameter(cookies, "", pageUrl));
                     fetchPageCount++;//计算获取页面数
@@ -224,6 +223,7 @@ namespace SDownloader
             int downloadCount = 0;
             myWriteLine("Download Task Create:" + myImgInfo.picIndex, ConsoleColor.Yellow);
             string myImgPath = savePath + myImgInfo.picIndex + "-" + myImgInfo.title + @"\";//合法目录
+            if (!Directory.Exists(myImgPath)) Directory.CreateDirectory(myImgPath);//创建文件目录
             Parallel.For(0, myImgInfo.imgUrl.Length, async (i, state) => {
                 if (myImgInfo.imgUrl[i].IndexOf("pan.baidu.com") == -1) {//跳过无用链接
                     myImgInfo.imgUrl[i] = myImgInfo.imgUrl[i].IndexOf("http") != -1 ? myImgInfo.imgUrl[i] : "https:" + myImgInfo.imgUrl[i];//url纠正
