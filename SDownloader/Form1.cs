@@ -72,7 +72,9 @@ namespace SDownloader
                     };
                     MySpider.OnPageFinished += (s, ex) => {
                         if (ex != null && MySpider != null) {
-                            mylistBox.Items.Remove(ex.imgInfoResult.picIndex + " " + ex.imgInfoResult.title);
+                            if (mylistBox.Items.Contains(ex.imgInfoResult.picIndex + " " + ex.imgInfoResult.title)) {
+                                mylistBox.Items.Remove(ex.imgInfoResult.picIndex + " " + ex.imgInfoResult.title);
+                            }
                             progressBar.Value = (int)MySpider.finishPageCount;
                         }
                         if (MySpider != null && MySpider.workFinishFlag) {
