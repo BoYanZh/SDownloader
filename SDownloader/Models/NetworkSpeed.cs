@@ -15,45 +15,63 @@ namespace SDownloader
         }
         private static object thislock = new Object();
 
-        static List<Speed> SpeedList = new List<Speed>();
+        private static double totalSize;
 
-        public static void Increment(long value) {
+        static List<Speed> speedList = new List<Speed>();
+
+        public static void init() {
+            totalSize = 0;
+        }
+
+        public static void increment(long value) {
             lock (thislock) {
-                SpeedList.Add(new Speed() { Size = value, Time = DateTime.Now });
-                if (SpeedList.Count > 3000) {
-                    if (SpeedList.Count > 0) {
-                        SpeedList.RemoveAt(0);
+                speedList.Add(new Speed() { Size = value, Time = DateTime.Now });
+                if (speedList.Count > 3000) {
+                    if (speedList.Count > 0) {
+                        speedList.RemoveAt(0);
                     }
                 }
             }
         }
 
-        static DateTime LastGetSpeedTime = DateTime.Now;
-
-        public static string GetSpeed() {
+        public static void addTotalSize(long size) {
             lock (thislock) {
-                if (SpeedList.Count > 0 && DateTime.Now.Subtract(SpeedList[SpeedList.Count - 1].Time).TotalSeconds > 1) {
-                    SpeedList.Clear();
-                    LastGetSpeedTime = DateTime.Now;
-                }
-                LastGetSpeedTime = DateTime.Now;
-                if (SpeedList.Count == 0) return "0 B/s";
-                long total = 0;
-                for (int i = 0; i < SpeedList.Count; i++) {
-                    total += SpeedList[i].Size;
-                }
-                double speed = total / (DateTime.Now - SpeedList[0].Time).TotalSeconds;
-                return string.Format("{0}/s", GetText(speed));
+                totalSize += size;
             }
         }
 
-        private static string GetText(double size) {
+        static DateTime lastGetSpeedTime = DateTime.Now;
+
+        public static string getSpeed() {
+            lock (thislock) {
+                if (speedList.Count > 0 && DateTime.Now.Subtract(speedList[speedList.Count - 1].Time).TotalSeconds > 1) {
+                    speedList.Clear();
+                    lastGetSpeedTime = DateTime.Now;
+                }
+                lastGetSpeedTime = DateTime.Now;
+                if (speedList.Count == 0) return "0 B/s";
+                long total = 0;
+                for (int i = 0; i < speedList.Count; i++) {
+                    total += speedList[i].Size;
+                }
+                double speed = total / (DateTime.Now - speedList[0].Time).TotalSeconds;
+                return string.Format("{0}/s", getText(speed));
+            }
+        }
+
+        private static string getText(double size) {
             if (size < 1024)
                 return string.Format("{0} B", size.ToString("0.0"));
             else if (size < 1024 * 1024)
                 return string.Format("{0} KB", (size / 1024.0f).ToString("0.0"));
-            else
+            else if (size < 1024 * 1024 * 1024)
                 return string.Format("{0} MB", (size / (1024.0f * 1024.0f)).ToString("0.0"));
+            else
+                return string.Format("{0} GB", (size / (1024.0f * 1024.0f * 1024.0f)).ToString("0.0"));
+        }
+
+        public static string getTotalSizeText() {
+            return getText(totalSize);
         }
     }
 }

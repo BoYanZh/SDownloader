@@ -6,10 +6,12 @@ using System.Threading.Tasks;
 using System.Text.RegularExpressions;
 using System.IO;
 using SDownloader.Event;
+using System.Diagnostics;
 
 namespace SDownloader
 {
-    public class GetSpider {
+    public class GetSpider
+    {
         private const int MAX_WAIT_COUNT = 20;             //最大等待页面
         private const int MAX_INVALID_PAGE_COUNT = 5;      //最大空页数量
         private const bool JUMP_REPEATED_PAGE = true;      //是否跳过重复
@@ -19,15 +21,18 @@ namespace SDownloader
         private string imgType;                            //图片类型
         private string savePath, allDirectiories;          //保存路径
         private string cookies = string.Empty;
+        private long pageIndex;
         private object writelineLocker = new object(), addListLocker = new object(), finishListLocker = new object();
+        private Stopwatch watch;
         private IWebSiteInfo MyWebSiteInfo;
         public long finishImgCount = 0, fetchImgCount = 0;
         public long finishPageCount = 0, fetchPageCount = 0;
-        public bool workFinishFlag = false, fetchIndexPageFlag = false;
+        public bool workFinishFlag = false, fetchIndexPageFlag = false, stopWorkFlag = false;
         public SpiderSettings Settings { get; private set; }
         public event EventHandler<OnFetchedEventArgs> OnPageFetched;
         public event EventHandler<OnFinishedEventArgs> OnPageFinished;
-        public struct ImgInfo {
+        public struct ImgInfo
+        {
             public string[] imgUrl;
             public string title;
             public string picIndex;
@@ -75,11 +80,21 @@ namespace SDownloader
                 if (e != null) myWriteLine("Fetch Page Finished:Index[" + e.imgInfoResult.picIndex + "]Title:" + e.imgInfoResult.title, ConsoleColor.Yellow);
                 if (finishImgCount == fetchImgCount && fetchIndexPageFlag) {
                     workFinishFlag = true;
+                    watch.Stop();
                     myWriteLine("All Tasks Finished!", ConsoleColor.Yellow);
+                    TimeSpan ts = watch.Elapsed;
+                    string elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}",
+                        ts.Hours, ts.Minutes, ts.Seconds,
+                        ts.Milliseconds / 10);
+                    myWriteLine("Total Time:" + elapsedTime, ConsoleColor.Yellow);
+                    myWriteLine("Total Images Count:" + finishImgCount + " Total Pages Count:" + finishPageCount, ConsoleColor.Yellow);
+                    myWriteLine("Total Download Size:" + NetworkSpeed.getTotalSizeText(), ConsoleColor.Yellow);
                 }
             };
         }
         public void run() {
+            watch = new Stopwatch();
+            watch.Start();
             Task getAllPagesTask = new Task(() => {
                 fetchAllPages();
             });
@@ -90,9 +105,10 @@ namespace SDownloader
         /// </summary>
         private void fetchAllPages() {
             myWriteLine("Task:Fetch All Pages Start", ConsoleColor.Yellow);
-            long invalidPageCount = 0, pageIndex = startPage;
+            long invalidPageCount = 0;
+            pageIndex = startPage;
             bool isLastPageInvalid = false;
-            for (; pageIndex <= endPage & !workFinishFlag; pageIndex++) {
+            for (; pageIndex <= endPage & !stopWorkFlag; pageIndex++) {
                 string myUrl = MyWebSiteInfo.urlConvert(domain, imgType, pageIndex); //得出url
                 myWriteLine("Fetch Index Page Started[" + pageIndex + "]");           //
                 string myHtml = MyHttp.getHtml(myUrl, out cookies);                   //获取html
@@ -181,8 +197,8 @@ namespace SDownloader
         private void fetchImgUrlFromIndexPage(string[] page) {
             foreach (string pageUrl in page) {
                 do {
-                } while (fetchPageCount - finishPageCount >= MAX_WAIT_COUNT && !workFinishFlag);
-                if (workFinishFlag) { break; }//检测退出
+                } while (fetchPageCount - finishPageCount >= MAX_WAIT_COUNT && !stopWorkFlag);
+                if (stopWorkFlag) { break; }//检测退出
                 string myPageUrl = pageUrl.IndexOf(@"://") != -1 ? pageUrl : domain + pageUrl;//得出完整url
                 string picIndex = pageUrl.Substring(pageUrl.LastIndexOf("/") + 1);//得出图片页面号
                 if (picIndex.LastIndexOf(".") == -1) { continue; }
@@ -195,7 +211,7 @@ namespace SDownloader
                 }
             }
         }
-        private void fetchImgFromPage(string pageUrl,string picIndex) {
+        private void fetchImgFromPage(string pageUrl, string picIndex) {
             string myPageHtml = MyHttp.getHtml(pageUrl, out cookies);//获取图片url列表
             string[] imgUrl = MyWebSiteInfo.imgReg(myPageHtml);//获取图片url
             string myTitle = getValidFileName(MyHttp.getHtmlTitle(myPageHtml));//获取合法标题
@@ -244,7 +260,7 @@ namespace SDownloader
         private void myWriteLine(string writeStr, ConsoleColor color = ConsoleColor.Green) {
             lock (writelineLocker) {
                 Console.ForegroundColor = color;
-                Console.WriteLine("{0} {1}", DateTimeOffset.Now.ToString("HH:mm:ss"), writeStr);
+                Console.WriteLine("{0} [{1}] {2}", DateTimeOffset.Now.ToString("HH:mm:ss"), pageIndex, writeStr);
             }
         }
     }

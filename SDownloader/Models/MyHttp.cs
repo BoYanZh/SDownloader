@@ -47,6 +47,7 @@ namespace SDownloader
             item.Header.Add("AcceptEncoding", "gzip,deflate");
             HttpResult result = http.GetHtml(item);
             string html = result.Html;
+            NetworkSpeed.increment(Encoding.Default.GetBytes(result.Html).Length);
             cookies = (result.Cookie == null) ? "" : result.Cookie.Split(';')[0];
             return html;
         }
@@ -65,6 +66,7 @@ namespace SDownloader
             };
             item.Header.Add("AcceptEncoding", "gzip,deflate");
             HttpResult result = http.GetHtml(item);
+            NetworkSpeed.increment(Encoding.Default.GetBytes(result.Html).Length);
             string html = result.Html;
             return html;
         }
@@ -135,7 +137,7 @@ namespace SDownloader
                                         l += i;
                                     }
                                 }
-                                NetworkSpeed.Increment(imgLong);
+                                NetworkSpeed.increment(imgLong);
                                 return "Name:" + fileName + imgType + " Time:" + milliseconds + "ms";
                             } else {
                                 throw new Exception("not image");
@@ -198,7 +200,8 @@ namespace SDownloader
                     watch.Stop();
                     if (result.ResultByte == null) { throw new Exception(result.Html); }
                     if(result.ResultByte.Length < MIN_IMG_SIZE) { throw new Exception("Invalid image size"); }
-                    NetworkSpeed.Increment(result.ResultByte.Length);
+                    NetworkSpeed.increment(result.ResultByte.Length);
+                    NetworkSpeed.addTotalSize(result.ResultByte.Length);
                     var milliseconds = watch.ElapsedMilliseconds;//获取请求执行时间
                     if (fileName == "") fileName = imgName.Substring(0, imgName.ToString().LastIndexOf("."));
                     //if (File.Exists(path + fileName + imgType)) File.Delete(path + fileName + imgType);

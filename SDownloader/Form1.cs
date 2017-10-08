@@ -46,7 +46,7 @@ namespace SDownloader
                 if (MySpider != null) {
                     toolStripStatusLabel2.Text = "Downloads:" + MySpider.finishImgCount.ToString();
                     toolStripStatusLabel3.Text = MySpider.finishPageCount + "/" + MySpider.fetchPageCount;
-                    toolStripStatusLabel4.Text = NetworkSpeed.GetSpeed();
+                    toolStripStatusLabel4.Text = NetworkSpeed.getSpeed();
                 }
                 Thread.Sleep(500);
             }
@@ -57,6 +57,7 @@ namespace SDownloader
                 Task clickTask = new Task(() => {
                     HSButton.Text = "Finish Download";
                     settingGroupBox.Enabled = false;
+                    NetworkSpeed.init();
                     MySettings = new SpiderSettings();
                     MySettings.TextKeywords.Add("P");
                     MySettings.imgType = picTypeTextBox.Text;
@@ -94,7 +95,7 @@ namespace SDownloader
                 clickTask.Start();
             } else if (HSButton.Text == "Finish Download") {
                 HSButton.Text = "Start Download";
-                MySpider.workFinishFlag = true;
+                MySpider.stopWorkFlag = true;
             }
         }
 
