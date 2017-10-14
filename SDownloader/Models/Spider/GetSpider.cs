@@ -78,17 +78,8 @@ namespace SDownloader
             };
             OnPageFinished = (s, e) => {
                 if (e != null) myWriteLine("Fetch Page Finished:Index[" + e.imgInfoResult.picIndex + "]Title:" + e.imgInfoResult.title, ConsoleColor.Yellow);
-                if (finishImgCount == fetchImgCount && fetchIndexPageFlag) {
-                    workFinishFlag = true;
-                    watch.Stop();
-                    myWriteLine("All Tasks Finished!", ConsoleColor.Yellow);
-                    TimeSpan ts = watch.Elapsed;
-                    string elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}",
-                        ts.Hours, ts.Minutes, ts.Seconds,
-                        ts.Milliseconds / 10);
-                    myWriteLine("Total Time:" + elapsedTime, ConsoleColor.Yellow);
-                    myWriteLine("Total Images Count:" + finishImgCount + " Total Pages Count:" + finishPageCount, ConsoleColor.Yellow);
-                    myWriteLine("Total Download Size:" + NetworkSpeed.getTotalSizeText(), ConsoleColor.Yellow);
+                if ((finishImgCount == fetchImgCount && fetchIndexPageFlag) || workFinishFlag) {
+                    end();
                 }
             };
         }
@@ -99,6 +90,18 @@ namespace SDownloader
                 fetchAllPages();
             });
             getAllPagesTask.Start();
+        }
+        private void end() {
+            workFinishFlag = true;
+            watch.Stop();
+            myWriteLine("All Tasks Finished!", ConsoleColor.Yellow);
+            TimeSpan ts = watch.Elapsed;
+            string elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}",
+                ts.Hours, ts.Minutes, ts.Seconds,
+                ts.Milliseconds / 10);
+            myWriteLine("Total Time:" + elapsedTime, ConsoleColor.Yellow);
+            myWriteLine("Total Images Count:" + finishImgCount + " Total Pages Count:" + finishPageCount, ConsoleColor.Yellow);
+            myWriteLine("Total Download Size:" + NetworkSpeed.getTotalSizeText(), ConsoleColor.Yellow);
         }
         /// <summary>
         /// 获取所有可下载图片链接
@@ -119,7 +122,6 @@ namespace SDownloader
                     myWriteLine("Fetch Index Page Invalid[" + pageIndex + "]", ConsoleColor.Red);
                     if (invalidPageCount >= MAX_INVALID_PAGE_COUNT) {                 //空页过多退出
                         workFinishFlag = true;
-                        OnPageFinished(null, null);
                         break;
                     }
                 } else {
@@ -128,6 +130,7 @@ namespace SDownloader
                     fetchImgUrlFromIndexPage(myPage);
                 }
             }
+            OnPageFinished(null, null);
             fetchIndexPageFlag = true;
             myWriteLine("Task:Fetch All Index Pages Finish", ConsoleColor.Yellow);
         }

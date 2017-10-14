@@ -22,7 +22,6 @@ namespace SDownloader
         public GetSpider MySpider;
         public SpiderSettings MySettings;
         public Thread refreshUIThread;
-        public volatile bool refreshUIFlag = false;
         public Form1() {
             InitializeComponent();
             AllocConsole();
@@ -79,8 +78,7 @@ namespace SDownloader
                             progressBar.Value = (int)MySpider.finishPageCount;
                         }
                         if (MySpider != null && MySpider.workFinishFlag) {
-                            refreshUIFlag = false;
-                            progressBar.Value = progressBar.Maximum;
+                            progressBar.Value = 0;
                             mylistBox.Items.Clear();
                             settingGroupBox.Enabled = true;
                             HSButton.Enabled = true;
@@ -89,12 +87,11 @@ namespace SDownloader
                     };
                     MySpider.run();
                     //MySpider.test();
-                    refreshUIFlag = true;
                 }
                 );
                 clickTask.Start();
             } else if (HSButton.Text == "Finish Download") {
-                HSButton.Text = "Start Download";
+                HSButton.Enabled = false;
                 MySpider.stopWorkFlag = true;
             }
         }
@@ -154,31 +151,6 @@ namespace SDownloader
                 case "桃花族":
                     urlTextBox.Text = "http://thibt.com/";
                     picTypeTextBox.Text = "221";
-                    break;
-            }
-        }
-        void a() {
-            siteComboBox_SelectedIndexChanged(null, null);
-            IWebSiteInfo MyWebSiteInfo;
-            switch (siteComboBox.Text) {
-                case "猫咪AV":
-                    MyWebSiteInfo = new MaomiAV();
-                    System.Diagnostics.Process.Start(MyWebSiteInfo.urlConvert(urlTextBox.Text, picTypeTextBox.Text, 1));
-                    break;
-                case "千百撸":
-                    MyWebSiteInfo = new QianBaiLu();
-                    break;
-                case "色哥哥":
-                    MyWebSiteInfo = new SeGeGe();
-                    break;
-                case "五月香":
-                    MyWebSiteInfo = new WuYueXiang();
-                    break;
-                case "2017MN":
-                    MyWebSiteInfo = new _2017MN();
-                    break;
-                case "桃花族":
-                    MyWebSiteInfo = new TaoHuaZu();
                     break;
             }
         }

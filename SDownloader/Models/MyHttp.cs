@@ -17,7 +17,7 @@ namespace SDownloader
     {
         const int HTML_TIMEOUT = 10000;
         const int IMG_TIMEOUT = 20000;
-        const int MIN_IMG_SIZE = 5000;
+        const int MIN_IMG_SIZE = 10000;
         static CookieContainer CookiesContainer { get; set; }//定义Cookie容器
         static string cookieString { get; set; }
         public struct httpParameter
@@ -70,6 +70,7 @@ namespace SDownloader
             string html = result.Html;
             return html;
         }
+        /* 保存web图片到本地(备选)
         /// <summary>
         /// 保存web图片到本地
         /// </summary>
@@ -86,11 +87,11 @@ namespace SDownloader
                 //string defaultType = ".jpg";
                 //string[] imgTypes = new string[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp" };
                 string imgType = imgUrl.ToString().Substring(imgUrl.ToString().LastIndexOf("."));
-                /*foreach (string it in imgTypes)
+                foreach (string it in imgTypes)
                 {
                     if (imgType.ToLower().Equals(it)) break;
                     if (it.Equals(".bmp")) imgType = defaultType;
-                }*/
+                }
                 try {
                     HttpWebRequest request = (HttpWebRequest)WebRequest.Create(imgUrl);
                     request.UserAgent = "Mozilla / 5.0(Windows NT 10.0; Win64; x64; rv: 55.0) Gecko / 20100101 Firefox / 55.0";
@@ -106,12 +107,12 @@ namespace SDownloader
                     request.Referer = MyHttpParameter.referer;
                     //request.CookieContainer = CookiesContainer;//附加Cookie容器
                     using (var response = (HttpWebResponse)request.GetResponse()) {
-                        /* request.CookieContainer = new CookieContainer();
+                         request.CookieContainer = new CookieContainer();
                          foreach (Cookie cookie in response.Cookies)
                          {
                              Console.WriteLine(cookie.ToString());
                              CookiesContainer.Add(cookie);//将Cookie加入容器，保存登录状态
-                         }*/
+                         }
                         Stream stream = null;
                         // 如果页面压缩，则解压数据流
                         if (response.ContentEncoding == "gzip") {
@@ -149,6 +150,7 @@ namespace SDownloader
                 }
             });
         }
+    */
         /// <summary>
         /// 用正则匹配数组
         /// </summary>
