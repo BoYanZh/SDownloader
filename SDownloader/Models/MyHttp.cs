@@ -184,7 +184,6 @@ namespace SDownloader
                     watch.Start();
                     if (path.Equals("")) throw new Exception("未指定保存文件的路径");
                     string imgName = imgUrl.ToString().Substring(imgUrl.ToString().LastIndexOf("/") + 1);
-                    string imgType = "";
                     HttpHelper http = new HttpHelper();
                     HttpItem item = new HttpItem() {
                         URL = imgUrl,//URL     必需项    
@@ -201,55 +200,68 @@ namespace SDownloader
                     HttpResult result = http.GetHtml(item);
                     watch.Stop();
                     if (result.ResultByte == null) { throw new Exception(result.Html); }
-                    if(result.ResultByte.Length < MIN_IMG_SIZE) { throw new Exception("Invalid image size"); }
+                    if (result.ResultByte.Length < MIN_IMG_SIZE) { throw new Exception("Invalid image size"); }
                     NetworkSpeed.increment(result.ResultByte.Length);
                     NetworkSpeed.addTotalSize(result.ResultByte.Length);
                     var milliseconds = watch.ElapsedMilliseconds;//获取请求执行时间
-                    if (fileName == "") fileName = imgName.Substring(0, imgName.ToString().LastIndexOf("."));
-                    //if (File.Exists(path + fileName + imgType)) File.Delete(path + fileName + imgType);
-                    using (Image resultImg = byteArrayToImage(result.ResultByte)) {
-                        if (resultImg.RawFormat.Equals(System.Drawing.Imaging.ImageFormat.Jpeg)) {
-                            imgType = ".jpg";
-                        } else if (resultImg.RawFormat.Equals(System.Drawing.Imaging.ImageFormat.Bmp)) {
-                            imgType = ".bmp";
-                        } else if (resultImg.RawFormat.Equals(System.Drawing.Imaging.ImageFormat.Gif)) {
-                            imgType = ".gif";
-                        } else if (resultImg.RawFormat.Equals(System.Drawing.Imaging.ImageFormat.Tiff)) {
-                            imgType = ".tif";
-                        } else if (resultImg.RawFormat.Equals(System.Drawing.Imaging.ImageFormat.Png)) {
-                            imgType = ".png";
-                        } else if (resultImg.RawFormat.Equals(System.Drawing.Imaging.ImageFormat.Wmf)) {
-                            imgType = ".wmf";
-                        } else {
-                            throw new Exception("Invalid image type");
-                        }
-                        string imgFullPath = path + fileName + imgType;
-                        switch (imgType) {
-                            case ".jpg":
-                                resultImg.Save(imgFullPath, System.Drawing.Imaging.ImageFormat.Jpeg);
-                                break;
-                            case ".bmp":
-                                resultImg.Save(imgFullPath, System.Drawing.Imaging.ImageFormat.Bmp);
-                                break;
-                            case ".gif":
-                                resultImg.Save(imgFullPath, System.Drawing.Imaging.ImageFormat.Gif);
-                                break;
-                            case ".tif":
-                                resultImg.Save(imgFullPath, System.Drawing.Imaging.ImageFormat.Tiff);
-                                break;
-                            case ".png":
-                                resultImg.Save(imgFullPath, System.Drawing.Imaging.ImageFormat.Png);
-                                break;
-                            case ".wmf":
-                                resultImg.Save(imgFullPath, System.Drawing.Imaging.ImageFormat.Wmf);
-                                break;
-                        }
+                    string saveResult = saveImg(result.ResultByte, path, fileName, imgName);
+                    if (!saveResult.StartsWith("Error:")) {
+                        return "Name:" + saveResult + " Time:" + milliseconds + "ms";
+                    } else {
+                        throw new Exception(saveResult);
                     }
-                    return "Name:" + fileName + imgType + " Time:" + milliseconds + "ms";
                 } catch (Exception ex) {
-                    return "Error:" + ex.Message;
+                    return (ex.Message.StartsWith("Error:") ? "" : "Error:") + ex.Message;
                 }
             });
+        }
+        private static string saveImg(byte[] imgByte, string path, string fileName, string imgName) {
+            try {
+                if (fileName == "") fileName = imgName.Substring(0, imgName.ToString().LastIndexOf("."));
+                string imgType = "";
+                //if (File.Exists(path + fileName + imgType)) File.Delete(path + fileName + imgType);
+                using (Image resultImg = byteArrayToImage(imgByte)) {
+                    if (resultImg.RawFormat.Equals(System.Drawing.Imaging.ImageFormat.Jpeg)) {
+                        imgType = ".jpg";
+                    } else if (resultImg.RawFormat.Equals(System.Drawing.Imaging.ImageFormat.Bmp)) {
+                        imgType = ".bmp";
+                    } else if (resultImg.RawFormat.Equals(System.Drawing.Imaging.ImageFormat.Gif)) {
+                        imgType = ".gif";
+                    } else if (resultImg.RawFormat.Equals(System.Drawing.Imaging.ImageFormat.Tiff)) {
+                        imgType = ".tif";
+                    } else if (resultImg.RawFormat.Equals(System.Drawing.Imaging.ImageFormat.Png)) {
+                        imgType = ".png";
+                    } else if (resultImg.RawFormat.Equals(System.Drawing.Imaging.ImageFormat.Wmf)) {
+                        imgType = ".wmf";
+                    } else {
+                        throw new Exception("Invalid image type");
+                    }
+                    string imgFullPath = path + fileName + imgType;
+                    switch (imgType) {
+                        case ".jpg":
+                            resultImg.Save(imgFullPath, System.Drawing.Imaging.ImageFormat.Jpeg);
+                            break;
+                        case ".bmp":
+                            resultImg.Save(imgFullPath, System.Drawing.Imaging.ImageFormat.Bmp);
+                            break;
+                        case ".gif":
+                            resultImg.Save(imgFullPath, System.Drawing.Imaging.ImageFormat.Gif);
+                            break;
+                        case ".tif":
+                            resultImg.Save(imgFullPath, System.Drawing.Imaging.ImageFormat.Tiff);
+                            break;
+                        case ".png":
+                            resultImg.Save(imgFullPath, System.Drawing.Imaging.ImageFormat.Png);
+                            break;
+                        case ".wmf":
+                            resultImg.Save(imgFullPath, System.Drawing.Imaging.ImageFormat.Wmf);
+                            break;
+                    }
+                }
+                return fileName + imgType;
+            }catch(Exception ex) {
+                return "Error:" + ex.Message;
+            }
         }
     }
 }
