@@ -10,6 +10,7 @@ using System.IO;
 using System.Text.RegularExpressions;
 using System.IO.Compression;
 using System.Drawing;
+using System.Security.Cryptography;
 
 namespace SDownloader
 {
@@ -17,9 +18,8 @@ namespace SDownloader
     {
         const int HTML_TIMEOUT = 10000;
         const int IMG_TIMEOUT = 20000;
-        const int MIN_IMG_SIZE = 10000;
+        const int MIN_IMG_SIZE = 5000;
         static CookieContainer CookiesContainer { get; set; }//定义Cookie容器
-        static string cookieString { get; set; }
         public struct httpParameter
         {
             public string cookie;
@@ -42,12 +42,14 @@ namespace SDownloader
                 UserAgent = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36",
                 ContentType = "application/x-www-form-urlencoded",//返回类型    可选项有默认值   
                 Timeout = HTML_TIMEOUT,
+                Accept = "application / json, text / javascript, */*; q=0.01",
                 //Cookie = cookieString,
             };
             item.Header.Add("AcceptEncoding", "gzip,deflate");
             HttpResult result = http.GetHtml(item);
             string html = result.Html;
             NetworkSpeed.increment(Encoding.Default.GetBytes(result.Html).Length);
+            html = html.Replace(@"\s", string.Empty).Replace(@"\r", string.Empty).Replace(@"\n", string.Empty).Replace(@"\f", string.Empty);
             cookies = (result.Cookie == null) ? "" : result.Cookie.Split(';')[0];
             return html;
         }
@@ -68,89 +70,9 @@ namespace SDownloader
             HttpResult result = http.GetHtml(item);
             NetworkSpeed.increment(Encoding.Default.GetBytes(result.Html).Length);
             string html = result.Html;
+            html = html.Replace(@"\s", string.Empty).Replace(@"\r", string.Empty).Replace(@"\n", string.Empty).Replace(@"\f", string.Empty);
             return html;
         }
-        /* 保存web图片到本地(备选)
-        /// <summary>
-        /// 保存web图片到本地
-        /// </summary>
-        /// <param name="imgUrl">web图片路径</param>
-        /// <param name="path">保存路径</param>
-        /// <param name="fileName">保存文件名</param>
-        /// <returns></returns>
-        public static async Task<string> SaveImageFromWeb(string imgUrl, string path, string fileName, httpParameter MyHttpParameter) {
-            return await Task.Run(() => {
-                var watch = new Stopwatch();
-                watch.Start();
-                if (path.Equals("")) throw new Exception("未指定保存文件的路径");
-                string imgName = imgUrl.ToString().Substring(imgUrl.ToString().LastIndexOf("/") + 1);
-                //string defaultType = ".jpg";
-                //string[] imgTypes = new string[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp" };
-                string imgType = imgUrl.ToString().Substring(imgUrl.ToString().LastIndexOf("."));
-                foreach (string it in imgTypes)
-                {
-                    if (imgType.ToLower().Equals(it)) break;
-                    if (it.Equals(".bmp")) imgType = defaultType;
-                }
-                try {
-                    HttpWebRequest request = (HttpWebRequest)WebRequest.Create(imgUrl);
-                    request.UserAgent = "Mozilla / 5.0(Windows NT 10.0; Win64; x64; rv: 55.0) Gecko / 20100101 Firefox / 55.0";
-                    request.ContentType = "text/html";
-                    request.Timeout = IMG_TIMEOUT;
-                    request.ContinueTimeout = IMG_TIMEOUT;
-                    request.ReadWriteTimeout = IMG_TIMEOUT;
-                    request.ServicePoint.Expect100Continue = false;//加快载入速度
-                    request.ServicePoint.UseNagleAlgorithm = false;//禁止Nagle算法加快载入速度
-                    request.ServicePoint.ConnectionLimit = int.MaxValue;//定义最大连接数
-                    request.Headers.Add("Cookie", MyHttpParameter.cookie);
-                    //request.Host = MyHttpParameter.host;
-                    request.Referer = MyHttpParameter.referer;
-                    //request.CookieContainer = CookiesContainer;//附加Cookie容器
-                    using (var response = (HttpWebResponse)request.GetResponse()) {
-                         request.CookieContainer = new CookieContainer();
-                         foreach (Cookie cookie in response.Cookies)
-                         {
-                             Console.WriteLine(cookie.ToString());
-                             CookiesContainer.Add(cookie);//将Cookie加入容器，保存登录状态
-                         }
-                        Stream stream = null;
-                        // 如果页面压缩，则解压数据流
-                        if (response.ContentEncoding == "gzip") {
-                            Stream responseStream = response.GetResponseStream();
-                            if (responseStream != null) {
-                                stream = new GZipStream(responseStream, CompressionMode.Decompress);
-                            }
-                        } else {
-                            stream = response.GetResponseStream();
-                        }
-                        using (stream) {
-                            watch.Stop();
-                            var milliseconds = watch.ElapsedMilliseconds;//获取请求执行时间
-                            if (response.ContentType.ToLower().StartsWith("image/")) {
-                                byte[] arrayByte = new byte[1024];
-                                int imgLong = (int)response.ContentLength;
-                                int l = 0;
-                                if (fileName == "") fileName = imgName.Substring(0, imgName.ToString().LastIndexOf("."));
-                                using (var fso = new FileStream(path + fileName + imgType, FileMode.Create)) {
-                                    while (l < imgLong) {
-                                        int i = stream.Read(arrayByte, 0, 1024);
-                                        fso.Write(arrayByte, 0, i);
-                                        l += i;
-                                    }
-                                }
-                                NetworkSpeed.increment(imgLong);
-                                return "Name:" + fileName + imgType + " Time:" + milliseconds + "ms";
-                            } else {
-                                throw new Exception("not image");
-                            }
-                        }
-                    }
-                } catch (Exception ex) {
-                    return "Error:" + ex.Message;
-                }
-            });
-        }
-    */
         /// <summary>
         /// 用正则匹配数组
         /// </summary>
@@ -192,15 +114,15 @@ namespace SDownloader
                         ReadWriteTimeout = IMG_TIMEOUT,
                         UserAgent = "Mozilla / 5.0(Windows NT 10.0; Win64; x64; rv: 55.0) Gecko / 20100101 Firefox / 55.0",//用户的浏览器类型，版本，操作系统     可选项有默认值   
                         ContentType = "text/html",//返回类型    可选项有默认值    
-                        Cookie = MyHttpParameter.cookie,
-                        Host = MyHttpParameter.host,
-                        Referer = MyHttpParameter.referer,
+                        //Cookie = MyHttpParameter.cookie,
+                        //Host = MyHttpParameter.host,
+                        //Referer = MyHttpParameter.referer,
                         ResultType = ResultType.Byte
                     };
                     HttpResult result = http.GetHtml(item);
                     watch.Stop();
                     if (result.ResultByte == null) { throw new Exception(result.Html); }
-                    if (result.ResultByte.Length < MIN_IMG_SIZE) { throw new Exception("Invalid image size"); }
+                    if (result.ResultByte.Length < MIN_IMG_SIZE) { throw new Exception("Invalid image size:" + result.ResultByte.Length); }
                     NetworkSpeed.increment(result.ResultByte.Length);
                     NetworkSpeed.addTotalSize(result.ResultByte.Length);
                     var milliseconds = watch.ElapsedMilliseconds;//获取请求执行时间
@@ -211,7 +133,7 @@ namespace SDownloader
                         throw new Exception(saveResult);
                     }
                 } catch (Exception ex) {
-                    return (ex.Message.StartsWith("Error:") ? "" : "Error:") + ex.Message;
+                    return (ex.Message.StartsWith("Error:") ? "" : "Error:") + ex.Message + " ImgUrl:" + imgUrl;
                 }
             });
         }
@@ -259,9 +181,54 @@ namespace SDownloader
                     }
                 }
                 return fileName + imgType;
-            }catch(Exception ex) {
+            } catch (Exception ex) {
                 return "Error:" + ex.Message;
             }
+        }
+        public static string get16bitMd5Str(string ConvertString) {
+            MD5CryptoServiceProvider md5 = new MD5CryptoServiceProvider();
+            string re = BitConverter.ToString(md5.ComputeHash(UTF8Encoding.Default.GetBytes(ConvertString)), 4, 8);
+            re = re.Replace("-", "");
+            return re;
+        }
+        public static string getValidFileName(string fileName) {
+            StringBuilder rBuilder = new StringBuilder(fileName);
+            foreach (char rInvalidChar in Path.GetInvalidFileNameChars())
+                rBuilder.Replace(rInvalidChar.ToString(), string.Empty);
+            return rBuilder.ToString();
+        }
+        public static string[] getHtmlImg(string sHtmlText) {
+            string reStr = string.Empty;
+            MatchCollection mc = Regex.Matches(sHtmlText, @"<img\b[^<>]*?\b(src|file)[\s\t\r\n]*=[\s\t\r\n]*[""']?[\s\t\r\n]*[^\s\t\r\n""'<>]*[^<>]*?[\s\t\r\n]*>");
+            foreach (Match m in mc) {
+                reStr += m + "\t";
+            }
+            if (reStr.Length > 1) {
+                reStr = reStr.Substring(0, reStr.Length - 1);
+            }
+            return Regex.Split(reStr,"\t");
+        }
+        public static string[] getHtmlImgWithKey(string[] imgs, string[] keys) {
+            string reStr = string.Empty;
+            foreach (string imgStr in imgs) {
+                if (imgStr.Length > 0) {
+                    if (string.Join(string.Empty, keys).Length == 0) {
+                        reStr += regArr(imgStr, @"<img\b[^<>]*?\b(src|file)[\s\t\r\n]*=[\s\t\r\n]*[""']?[\s\t\r\n]*(?<matchStr>[^\s\t\r\n""'<>]*)[^<>]*?[\s\t\r\n]*>")[0] + "\t";
+                    } else {
+                        bool isAdd = true;
+                        foreach (string keyStr in keys) {
+                            if (keyStr != string.Empty & imgStr.IndexOf(keyStr) == -1) {
+                                isAdd = false;
+                            }
+                        }
+                        if(isAdd) reStr += regArr(imgStr, @"<img\b[^<>]*?\b(src|file)[\s\t\r\n]*=[\s\t\r\n]*[""']?[\s\t\r\n]*(?<matchStr>[^\s\t\r\n""'<>]*)[^<>]*?[\s\t\r\n]*>")[0] + "\t";
+                    }
+                }
+            }
+            if (reStr.Length > 1) {
+                reStr = reStr.Substring(0, reStr.Length - 1);
+            }
+            return Regex.Split(reStr, "\t"); ;
         }
     }
 }

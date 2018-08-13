@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Runtime.InteropServices;
 using System.Threading;
+using Newtonsoft.Json;
 
 namespace SDownloader
 {
@@ -18,10 +19,10 @@ namespace SDownloader
         public static extern Boolean AllocConsole();
         [DllImport("kernel32.dll")]
         public static extern Boolean FreeConsole();
-        public List<string> urlList;
-        public GetSpider MySpider;
-        public SpiderSettings MySettings;
-        public Thread refreshUIThread;
+
+        private GetSpider MySpider;
+        private SpiderSettings MySettings;
+        private Thread refreshUIThread;
         public Form1() {
             InitializeComponent();
             AllocConsole();
@@ -32,11 +33,77 @@ namespace SDownloader
             startPageNUD.Value = 1;
             endPageNUD.Maximum = long.MaxValue;
             endPageNUD.Value = 2500;
-            siteComboBox.Text = siteComboBox.Items[0].ToString();
             refreshUIThread = new Thread(refreshUI);
             refreshUIThread.IsBackground = true;
             refreshUIThread.Start();
             pathTextBox.Text = System.Windows.Forms.Application.StartupPath + @"\downloads";
+            string tmpStr = Properties.Settings.Default.webInfo;
+            WebsiteInfo.websiteList = getWebSitesSettings();
+            foreach (WebSiteSetting ws in WebsiteInfo.websiteList) {
+                siteComboBox.Items.Add(ws.siteName);
+            }
+            siteComboBox.Text = siteComboBox.Items[0].ToString();
+        }
+
+        private List<WebSiteSetting> getWebSitesSettings() {
+            List<WebSiteSetting> tmpWebsiteList = new List<WebSiteSetting>();
+            /*string[] mySettings = Properties.Settings.Default.webInfo.Split('\n');
+            foreach(string stStr in mySettings) {
+                if(stStr.IndexOf('\t') > -1) {
+                    WebSiteSetting tmpWebsites = new WebSiteSetting();
+                    string[] myInfos = stStr.Split('\t');
+                    foreach (string infoStr in myInfos) {
+                        if (infoStr.StartsWith("siteName=")) {
+                            tmpWebsites.siteName = infoStr.Substring("siteName=".Length);
+                        }else if (infoStr.StartsWith("domain=")) {
+                            tmpWebsites.domain = infoStr.Substring("domain=".Length);
+                        } else if (infoStr.StartsWith("imgType=")) {
+                            tmpWebsites.imgType = infoStr.Substring("imgType=".Length);
+                        } else if (infoStr.StartsWith("imgKeys=")) {
+                            tmpWebsites.imgKeys = infoStr.Substring("imgKeys=".Length).Split('|');
+                        } else if (infoStr.StartsWith("pageRegex=")) {
+                            tmpWebsites.pageRegex = infoStr.Substring("pageRegex=".Length);
+                        } else if (infoStr.StartsWith("urlPattern=")) {
+                            tmpWebsites.urlPattern = infoStr.Substring("urlPattern=".Length);
+                        } else if (infoStr.StartsWith("firstPageUrlPattern=")) {
+                            tmpWebsites.firstPageUrlPattern = infoStr.Substring("firstPageUrlPattern=".Length);
+                        }
+                    }
+                    tmpWebsiteList.Add(tmpWebsites);
+                }
+            }
+            tmpWebsiteList.Clear();*/
+            var myJsons = JsonConvert.DeserializeObject<List<WebSiteSetting>>(Properties.Settings.Default.myWebsites);
+            tmpWebsiteList = myJsons;
+            return tmpWebsiteList;
+        }
+
+        private void saveCurrentSettings() {
+            /*string tmpstr = string.Empty;
+            tmpstr += "siteName=" + siteComboBox.Text + '\t';
+            tmpstr += "domain=" + urlTextBox.Text + '\t';
+            tmpstr += "imgType=" + imgTypeTextBox.Text + '\t';
+            tmpstr += "imgKeys=" + imgKeysTextBox.Text + '\t';
+            tmpstr += "pageRegex=" + pageRegTextBox.Text + '\t';
+            tmpstr += "urlPattern=" + urlPatTextBox.Text + '\t';
+            tmpstr += "firstPageUrlPattern=" + _1stUrlTextBox.Text + '\n';
+            string[] mySettings = Properties.Settings.Default.webInfo.Split('\n');
+            string replaceStr = string.Empty;
+            foreach (string stStr in mySettings) {
+                if (stStr.StartsWith("siteName=" + siteComboBox.Text)) {
+                    replaceStr = stStr;
+                }
+            }
+            if(replaceStr != string.Empty) {
+                Properties.Settings.Default.webInfo = Properties.Settings.Default.webInfo.Replace(replaceStr, tmpstr);
+            } else {
+                Properties.Settings.Default.webInfo += tmpstr;
+            }*/
+            string jsonData = JsonConvert.SerializeObject(WebsiteInfo.websiteList);
+            Properties.Settings.Default.myWebsites = jsonData;
+            Properties.Settings.Default.Save();
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine("{0} [{1}] {2}", DateTimeOffset.Now.ToString("HH:mm:ss"), 0, "Settings Saved!");
         }
 
         private void refreshUI() {
@@ -56,10 +123,20 @@ namespace SDownloader
                 Task clickTask = new Task(() => {
                     HSButton.Text = "Finish Download";
                     settingGroupBox.Enabled = false;
+                    WebsiteInfo.websiteList[WebsiteInfo.websiteList.FindIndex(s => s.siteName == siteComboBox.Text)] = new WebSiteSetting() {
+                        siteName = siteComboBox.Text,
+                        domain = urlTextBox.Text,
+                        imgType = imgTypeTextBox.Text,
+                        imgKeys = imgKeysTextBox.Text.Split('|'),
+                        pageRegex = pageRegTextBox.Text,
+                        urlPattern = urlPatTextBox.Text,
+                        firstPageUrlPattern = _1stUrlTextBox.Text,
+                    };
+                    saveCurrentSettings();
                     NetworkSpeed.init();
                     MySettings = new SpiderSettings();
                     MySettings.TextKeywords.Add("P");
-                    MySettings.imgType = picTypeTextBox.Text;
+                    MySettings.imgType = imgTypeTextBox.Text;
                     MySettings.domain = urlTextBox.Text;
                     MySettings.siteName = siteComboBox.Text;
                     MySettings.savePath = pathTextBox.Text;
@@ -72,9 +149,9 @@ namespace SDownloader
                     };
                     MySpider.OnPageFinished += (s, ex) => {
                         if (ex != null && MySpider != null) {
-                            if (mylistBox.Items.Contains(ex.imgInfoResult.picIndex + " " + ex.imgInfoResult.title)) {
-                                mylistBox.Items.Remove(ex.imgInfoResult.picIndex + " " + ex.imgInfoResult.title);
-                            }
+                            //if (mylistBox.Items.Contains(ex.imgInfoResult.picIndex + " " + ex.imgInfoResult.title)) {
+                            mylistBox.Items.Remove(ex.imgInfoResult.picIndex + " " + ex.imgInfoResult.title);
+                            //}
                             progressBar.Value = (int)MySpider.finishPageCount;
                         }
                         if (MySpider != null && MySpider.workFinishFlag) {
@@ -97,11 +174,12 @@ namespace SDownloader
         }
 
         private void DSButton_Click(object sender, EventArgs e) {
-            Task clickTask = new Task(() => {
+            /*Task clickTask = new Task(() => {
                 DelSpider.work();
             }
             );
-            clickTask.Start();
+            clickTask.Start();*/
+            //mylistBox.Items.Remove("1");
         }
 
         private void browserButton_Click(object sender, EventArgs e) {
@@ -115,6 +193,7 @@ namespace SDownloader
         private void Form1_FormClosing(object sender, FormClosingEventArgs e) {
             DialogResult result = MessageBox.Show("Sure to Exit？", "Tip", MessageBoxButtons.OKCancel, MessageBoxIcon.Information);
             if (result == DialogResult.OK) {
+                saveCurrentSettings();
                 e.Cancel = false;  //点击OK   
             } else {
                 e.Cancel = true;
@@ -127,62 +206,40 @@ namespace SDownloader
         }
 
         private void siteComboBox_SelectedIndexChanged(object sender, EventArgs e) {
-            switch (siteComboBox.Text) {
-                case "猫咪AV":
-                    urlTextBox.Text = "https://www.ttt844.com/";
-                    picTypeTextBox.Text = "piclist3";
-                    break;
-                case "千百撸":
-                    urlTextBox.Text = "https://9999av.co/";
-                    picTypeTextBox.Text = "oumei";
-                    break;
-                case "色哥哥":
-                    urlTextBox.Text = "http://48td.com/";
-                    picTypeTextBox.Text = "13";
-                    break;
-                case "五月香":
-                    urlTextBox.Text = "http://www.dazhuazhi.com/";
-                    picTypeTextBox.Text = "68";
-                    break;
-                case "2017MN":
-                    urlTextBox.Text = "http://www.2017mn.com/";
-                    picTypeTextBox.Text = "oumei";
-                    break;
-                case "桃花族":
-                    urlTextBox.Text = "http://thibt.com/";
-                    picTypeTextBox.Text = "221";
-                    break;
-            }
+            WebSiteSetting ws = WebsiteInfo.websiteList.Find(s => s.siteName == siteComboBox.Text);
+            urlTextBox.Text = ws.domain;
+            imgTypeTextBox.Text = ws.imgType;
+            pageRegTextBox.Text = ws.pageRegex;
+            urlPatTextBox.Text = ws.urlPattern;
+            _1stUrlTextBox.Text = ws.firstPageUrlPattern;
+            imgKeysTextBox.Text = ws.imgKeys != null ? string.Join("|", ws.imgKeys) : string.Empty;
         }
 
         private void previewButton_Click(object sender, EventArgs e) {
-            IWebSiteInfo MyWebSiteInfo;
-            switch (siteComboBox.Text) {
-                case "猫咪AV":
-                    MyWebSiteInfo = new MaomiAV();
-                    System.Diagnostics.Process.Start(MyWebSiteInfo.urlConvert(urlTextBox.Text, picTypeTextBox.Text, 1));
-                    break;
-                case "千百撸":
-                    MyWebSiteInfo = new QianBaiLu();
-                    System.Diagnostics.Process.Start(MyWebSiteInfo.urlConvert(urlTextBox.Text, picTypeTextBox.Text, 1));
-                    break;
-                case "色哥哥":
-                    MyWebSiteInfo = new SeGeGe();
-                    System.Diagnostics.Process.Start(MyWebSiteInfo.urlConvert(urlTextBox.Text, picTypeTextBox.Text, 1));
-                    break;
-                case "五月香":
-                    MyWebSiteInfo = new WuYueXiang();
-                    System.Diagnostics.Process.Start(MyWebSiteInfo.urlConvert(urlTextBox.Text, picTypeTextBox.Text, 1));
-                    break;
-                case "2017MN":
-                    MyWebSiteInfo = new _2017MN();
-                    System.Diagnostics.Process.Start(MyWebSiteInfo.urlConvert(urlTextBox.Text, picTypeTextBox.Text, 1));
-                    break;
-                case "桃花族":
-                    MyWebSiteInfo = new TaoHuaZu();
-                    System.Diagnostics.Process.Start(MyWebSiteInfo.urlConvert(urlTextBox.Text, picTypeTextBox.Text, 1));
-                    break;
-            }
+            WebSiteSetting ws = WebsiteInfo.websiteList.Find(s => s.siteName == siteComboBox.Text);
+            //System.Diagnostics.Process.Start(ws.websiteConverter.urlConvert(urlTextBox.Text, imgTypeTextBox.Text, 1));
+            string myUrl = WebSiteConverter.getUrl(urlPatTextBox.Text, _1stUrlTextBox.Text, urlTextBox.Text, imgTypeTextBox.Text, 1);
+            System.Diagnostics.Process.Start(myUrl);
+        }
+
+        private void addSiteButton_Click(object sender, EventArgs e) {
+            Properties.Settings.Default.customItem++;
+            Properties.Settings.Default.Save();
+            WebsiteInfo.websiteList.Add(new WebSiteSetting() {
+                siteName = "Custom" + Properties.Settings.Default.customItem
+            });
+            siteComboBox.Items.Add("Custom" + Properties.Settings.Default.customItem);
+        }
+
+        private void siteComboBox_Click(object sender, EventArgs e) {
+            WebSiteSetting ws = WebsiteInfo.websiteList.Find(s => s.siteName == siteComboBox.Text);
+            ws.domain = urlTextBox.Text;
+            ws.imgType = imgTypeTextBox.Text;
+            ws.pageRegex = pageRegTextBox.Text;
+            ws.urlPattern = urlPatTextBox.Text;
+            ws.firstPageUrlPattern = _1stUrlTextBox.Text;
+            ws.imgKeys = imgKeysTextBox.Text.Split('|');
+            saveCurrentSettings();
         }
     }
 }
