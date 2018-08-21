@@ -1,7 +1,8 @@
 from urllib.request import Request, urlopen
-import multiprocessing as mp
 import random
 import re
+import platform
+import time
 
 PATTERN = re.compile(r'成人|色|视频|电影|照片')
 
@@ -44,12 +45,20 @@ def gen():
         kl=random.randint(0,9)
         jl=random.randint(0,9)
         return 'http://www.'+chr(l)+chr(l)+str(jl)+str(kl)+str(jl)+str(kl)+'.com'
+    
+PROCESSES = 64
 
 if __name__ == "__main__":
-    pool = mp.Pool(processes=64)
-    try:
+    if platform.system() != 'Windows':
+        import multiprocessing as mp
+        pool = mp.Pool(processes=PROCESSES)
         while True:
             page_urls = [gen() for _ in range(1000)]
             results = pool.map(validate, page_urls)
-    except KeyboardInterrupt:
-        exit()
+    else:
+        import threading as td
+        base_active_count = td.active_count()
+        while True:
+            while td.active_count() - base_active_count < PROCESSES:
+                p = td.Thread(target=validate, args=(gen(),)).start()
+            time.sleep(0.01)
