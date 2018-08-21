@@ -49,7 +49,7 @@ def gen():
 PROCESSES = 64
 
 if __name__ == "__main__":
-    if platform.system() != 'Windows' and 0:
+    if platform.system() != 'Windows':
         import multiprocessing as mp
         pool = mp.Pool(processes=PROCESSES)
         while True:
