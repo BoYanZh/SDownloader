@@ -6,7 +6,7 @@ import re
 import time
 import queue
 
-PATTERN = re.compile(r'成人|色|视频|电影|照片')
+PATTERN = re.compile(r'成人|黄色|色情|视频|电影|照片')
 
 def validate(url, q):
     """
@@ -23,8 +23,9 @@ def validate(url, q):
     except UnicodeDecodeError:
         try:
             request = Request(url, headers=headers)
-            html = urlopen(request, timeout=4).read().decode('gbk', 'replace')
+            html = urlopen(request, timeout=4).read().decode('gbk', 'replace').encode('utf-8')
             if re.search(PATTERN, html):
+                print('dad')
                 q.put((url, html))
             else:
                 return
@@ -71,12 +72,12 @@ if __name__ == "__main__":
                 url = gen()
                 if url not in url_set:
                     p = td.Thread(target=validate, args=(url, q)).start()
-                    url_set.update(url)
+                    url_set.update([url])
                 while not q.empty():
                     url, html = q.get()
                     if html not in html_set:
                         print(url)
-                        html_set.update(html)
+                        html_set.update([html])
             time.sleep(0.01)
 
         except KeyboardInterrupt:
