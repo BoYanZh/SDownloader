@@ -7,8 +7,8 @@ import threading as td
 import time
 
 DOMAIN = "http://www.ppp179.com/"
-KEY_WORD = ""
-UNALLOWED_DICT = {}
+PAGE_KEY_WORD = "丝袜"
+MAX_THREAD_COUNT = 128
 
 def getHtml(url, timeout = 10):
     global DOMAIN
@@ -27,9 +27,7 @@ def getHtml(url, timeout = 10):
 
 #返回含关键词的的索引页dict
 def getIndexPageDict(html):
-    global DOMAIN
-    PAGE_KEY_WORD = "欧美"
-    #pageDict = []
+    global DOMAIN, PAGE_KEY_WORD
     soup = BeautifulSoup(html, "lxml")
     for link in soup.find_all('a'):
         if(link.string != None and PAGE_KEY_WORD in link.string):
@@ -37,45 +35,42 @@ def getIndexPageDict(html):
                        "url": link.get('href').replace(DOMAIN, "")}
             return tmpDict
     return {}
-            #if(tmpDict not in pageDict):
-            #    pageDict.append(tmpDict)
-    #return pageDict
 
 #返回内容页名称+链接dict
-def getContentPageDict(indexPageDict):
-    global DOMAIN, UNALLOWED_DICT
-    if(UNALLOWED_DICT.get(indexPageDict['keyWord']) == None):
-        UNALLOWED_DICT[indexPageDict['keyWord']] = []
-    if(indexPageDict['url'] in UNALLOWED_DICT[indexPageDict['keyWord']]):
-        return {}
-    else:
-        pageDict = []
-        html = getHtml(indexPageDict["url"])
-        soup = BeautifulSoup(html, "lxml")
-        for link in soup.find_all('a'):
-            tmpDict = {"keyWord": indexPageDict["keyWord"], \
-                       "name": link.string, \
-                       "url": link.get('href').replace(DOMAIN, "")}
-            if(tmpDict["name"] != None and len(tmpDict["name"]) > 6 and tmpDict not in pageDict):
-                pageDict.append(tmpDict)
-        return pageDict
+def getContentPageDictList(indexPageDict):
+    global DOMAIN
+    pageDict = []
+    html = getHtml(indexPageDict["url"])
+    soup = BeautifulSoup(html, "lxml")
+    for link in soup.find_all('a'):
+        tmpDict = {"keyWord": indexPageDict["keyWord"], \
+                   "name": link.string, \
+                   "url": link.get('href').replace(DOMAIN, "")}
+        if(tmpDict["name"] != None and len(tmpDict["name"]) > 6 and tmpDict not in pageDict):
+            pageDict.append(tmpDict)
+    return pageDict
 
 #返回内容页中图片链接dict
-def getImgUrlDict(contentPageDict):
-    global DOMAIN, UNALLOWED_DICT
-    imgDict = []
+def getImgUrlDictList(contentPageDict):
+    global DOMAIN
+    filePath = DOMAIN.split(".")[1] +  "\\" + contentPageDict["keyWord"] +  "\\" + contentPageDict["name"]
+    if(not os.path.exists(filePath)):
+        os.makedirs(filePath) 
+    else:
+        print("Path existed:" + filePath)
+        return []
+    imgDictList = []
     html = getHtml(contentPageDict["url"])
     soup = BeautifulSoup(html, "lxml")
     for link in soup.find_all('img'):
         tmpDict = {"keyWord": contentPageDict["keyWord"], \
                    "name": contentPageDict["name"], \
                    "url": link.get('src')}
-        if(tmpDict not in imgDict):
-            imgDict.append(tmpDict)
-    if(len(imgDict) > 10):
-        return imgDict
+        if(tmpDict not in imgDictList):
+            imgDictList.append(tmpDict)
+    if(len(imgDictList) > 10):
+        return imgDictList
     else:
-        UNALLOWED_DICT[contentPageDict['keyWord']].append(contentPageDict["url"])
         return []
 
 #下载图片
@@ -93,13 +88,10 @@ def downloadImg(imgUrlDict):
             try:
                 if(not os.path.exists(filePath)):
                     os.makedirs(filePath) 
-                    with open(fileFullPath,'wb') as f:
-                        f.write(urlImg)
-                    print("Download Success:" + fileFullPath)
-                    return fileFullPath
-                else:
-                    print("Path existed:" + filePath)
-                    return ""
+                with open(fileFullPath,'wb') as f:
+                    f.write(urlImg)
+                print("Download Success:" + fileFullPath)
+                return fileFullPath
             except:
                 print("Unexpected error:" + str(sys.exc_info()[0]))
                 return ""
@@ -120,20 +112,17 @@ def getNextIndexPageDict(indexPageDict):
             return tmpDict
     return {}
 
-MAX_THREAD_COUNT = 128
 base_active_count = td.active_count()
 html = getHtml(DOMAIN)
 indexPageDict = getIndexPageDict(html)
 while(indexPageDict != {}):
-    contentPageDict = getContentPageDict(indexPageDict)
-    for contentPage in contentPageDict:
-        imgUrlDict = getImgUrlDict(contentPage)
-        while td.active_count() - base_active_count + len(imgUrlDict) > MAX_THREAD_COUNT:
+    contentPageDictList = getContentPageDictList(indexPageDict)
+    for contentPageDict in contentPageDictList:
+        imgUrlDict = getImgUrlDictList(contentPageDict)
+        while(td.active_count() - base_active_count + len(imgUrlDict) > MAX_THREAD_COUNT):
             time.sleep(0.01)
         for imgUrl in imgUrlDict:
             t = td.Thread(target=downloadImg, args=(imgUrl,))
             t.start()
-        #for imgUrl in imgUrlDict:
-        #    print(downloadImg(imgUrl))
     indexPageDict = getNextIndexPageDict(indexPageDict)
     print("next page")
