@@ -3,6 +3,8 @@ from bs4 import BeautifulSoup
 import urllib
 import sys
 import os
+import threading as td
+import time
 
 DOMAIN = "http://www.ppp179.com/"
 KEY_WORD = ""
@@ -84,18 +86,27 @@ def downloadImg(imgUrlDict):
     filePath = DOMAIN.split(".")[1] +  "\\" + imgUrlDict["keyWord"] +  "\\" + imgUrlDict["name"]
     fileName = imgUrlDict["url"].split("/")[-1]
     fileFullPath = filePath + "\\" + fileName
-    response = urllib.request.urlopen(imgUrlDict["url"], timeout = 10)
-    urlImg = response.read()
-    if(len(urlImg) > 10000):
-        try:
-            if not os.path.exists(filePath):
-                os.makedirs(filePath) 
-            with open(fileFullPath,'wb') as f:
-                f.write(urlImg)
-            return fileFullPath
-        except:
-            return "Unexpected error:", sys.exc_info()[0]
-    else:
+    try:
+        response = urllib.request.urlopen(imgUrlDict["url"], timeout = 10)
+        urlImg = response.read()
+        if(len(urlImg) > 10000):
+            try:
+                if(not os.path.exists(filePath)):
+                    os.makedirs(filePath) 
+                    with open(fileFullPath,'wb') as f:
+                        f.write(urlImg)
+                    print("Download Success:" + fileFullPath)
+                    return fileFullPath
+                else:
+                    print("Path existed:" + filePath)
+                    return ""
+            except:
+                print("Unexpected error:" + str(sys.exc_info()[0]))
+                return ""
+        else:
+            return ""
+    except:
+        print("Unexpected error:" + str(sys.exc_info()[0]))
         return ""
 
 def getNextIndexPageDict(indexPageDict):
@@ -109,14 +120,20 @@ def getNextIndexPageDict(indexPageDict):
             return tmpDict
     return {}
 
+MAX_THREAD_COUNT = 128
+base_active_count = td.active_count()
 html = getHtml(DOMAIN)
 indexPageDict = getIndexPageDict(html)
 while(indexPageDict != {}):
     contentPageDict = getContentPageDict(indexPageDict)
-    print(contentPageDict)
     for contentPage in contentPageDict:
         imgUrlDict = getImgUrlDict(contentPage)
+        while td.active_count() - base_active_count + len(imgUrlDict) > MAX_THREAD_COUNT:
+            time.sleep(0.01)
         for imgUrl in imgUrlDict:
-            print(downloadImg(imgUrl))
+            t = td.Thread(target=downloadImg, args=(imgUrl,))
+            t.start()
+        #for imgUrl in imgUrlDict:
+        #    print(downloadImg(imgUrl))
     indexPageDict = getNextIndexPageDict(indexPageDict)
-    print("\nnext page\n")
+    print("next page")
