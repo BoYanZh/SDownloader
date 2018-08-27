@@ -1,2 +1,2 @@
 # SDownloader
-A software which can download images.
+It's boring to describe it.Just have a try!
