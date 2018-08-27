@@ -6,23 +6,52 @@ import os
 import threading as td
 import time
 
-DOMAIN = "http://www.ppp179.com/"
-PAGE_KEY_WORD = "丝袜"
+STOP_FLAG = False
+DOMAIN = "http://www.382cf.com/"
+HOME_PAGE = "http://www.382cf.com/htm/index.htm"
+PAGE_KEY_WORD = "卡通动漫"
 MAX_THREAD_COUNT = 128
+
+def crawlTask():
+    global DOMAIN, HOME_PAGE, STOP_FLAG
+    base_active_count = td.active_count()
+    html = getHtml(DOMAIN if len(HOME_PAGE) == 0 else HOME_PAGE)
+    indexPageDict = getIndexPageDict(html)
+    while(indexPageDict != {}):
+        contentPageDictList = getContentPageDictList(indexPageDict)
+        for contentPageDict in contentPageDictList:
+            imgUrlDict = getImgUrlDictList(contentPageDict)
+            while(td.active_count() - base_active_count + len(imgUrlDict) > MAX_THREAD_COUNT and not STOP_FLAG):
+                time.sleep(0.01)
+            if(STOP_FLAG):
+                break
+            for imgUrl in imgUrlDict:
+                t = td.Thread(target=downloadImg, args=(imgUrl,), daemon=True)
+                t.start()
+        if(STOP_FLAG):
+            break
+        indexPageDict = getNextIndexPageDict(indexPageDict)
+    print("crawl task end")
 
 def getHtml(url, timeout = 10):
     global DOMAIN
+    if("http" not in url):
+        url = DOMAIN + url
+    headers = { 'User-Agent' : 'Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)' }
+    req = urllib.request.Request(url, headers = headers)
     try:
-        if("http" not in url):
-            url = DOMAIN + url
-        user_agent = 'Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)'
-        headers = { 'User-Agent' : user_agent }
-        req = urllib.request.Request(url, headers = headers)
         response = urllib.request.urlopen(req, timeout = timeout)
-        html = response.read().decode('utf-8')
-        return html
+        try:
+            html = response.read().decode('utf-8')
+            return html
+        except UnicodeDecodeError:
+            html = response.read().decode("gbk")
+            return html
+        except:
+            print("Unexpected error:", str(sys.exc_info()), "Url", url)
+            return ""
     except:
-        print("Unexpected error:", sys.exc_info()[0], "Url", url)
+        print("Unexpected error:", str(sys.exc_info()), "Url", url)
         return ""
 
 #返回含关键词的的索引页dict
@@ -33,6 +62,7 @@ def getIndexPageDict(html):
         if(link.string != None and PAGE_KEY_WORD in link.string):
             tmpDict = {"keyWord": link.string, \
                        "url": link.get('href').replace(DOMAIN, "")}
+            print(tmpDict)
             return tmpDict
     return {}
 
@@ -43,10 +73,17 @@ def getContentPageDictList(indexPageDict):
     html = getHtml(indexPageDict["url"])
     soup = BeautifulSoup(html, "lxml")
     for link in soup.find_all('a'):
+        tmpName = None
+        for content in link.contents:
+            if(r"</" not in content):
+                tmpName = content
         tmpDict = {"keyWord": indexPageDict["keyWord"], \
-                   "name": link.string, \
+                   "name": tmpName, \
                    "url": link.get('href').replace(DOMAIN, "")}
-        if(tmpDict["name"] != None and len(tmpDict["name"]) > 6 and tmpDict not in pageDict):
+        if(tmpDict["name"] != None and \
+           len(tmpDict["name"]) > 6 and \
+           "http" not in tmpDict["url"] and \
+           tmpDict not in pageDict):
             pageDict.append(tmpDict)
     return pageDict
 
@@ -82,7 +119,9 @@ def downloadImg(imgUrlDict):
     fileName = imgUrlDict["url"].split("/")[-1]
     fileFullPath = filePath + "\\" + fileName
     try:
-        response = urllib.request.urlopen(imgUrlDict["url"], timeout = 10)
+        headers = { 'User-Agent' : 'Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)' }
+        req = urllib.request.Request(imgUrlDict["url"], headers = headers)
+        response = urllib.request.urlopen(req, timeout = 10)
         urlImg = response.read()
         if(len(urlImg) > 10000):
             try:
@@ -93,12 +132,12 @@ def downloadImg(imgUrlDict):
                 print("Download Success:" + fileFullPath)
                 return fileFullPath
             except:
-                print("Unexpected error:" + str(sys.exc_info()[0]))
+                print("Unexpected error:" + str(sys.exc_info()) + "Url:" + imgUrlDict["url"])
                 return ""
         else:
             return ""
     except:
-        print("Unexpected error:" + str(sys.exc_info()[0]))
+        print("Unexpected error:" + str(sys.exc_info()) + "Url:" + imgUrlDict["url"])
         return ""
 
 def getNextIndexPageDict(indexPageDict):
@@ -112,17 +151,9 @@ def getNextIndexPageDict(indexPageDict):
             return tmpDict
     return {}
 
-base_active_count = td.active_count()
-html = getHtml(DOMAIN)
-indexPageDict = getIndexPageDict(html)
-while(indexPageDict != {}):
-    contentPageDictList = getContentPageDictList(indexPageDict)
-    for contentPageDict in contentPageDictList:
-        imgUrlDict = getImgUrlDictList(contentPageDict)
-        while(td.active_count() - base_active_count + len(imgUrlDict) > MAX_THREAD_COUNT):
-            time.sleep(0.01)
-        for imgUrl in imgUrlDict:
-            t = td.Thread(target=downloadImg, args=(imgUrl,))
-            t.start()
-    indexPageDict = getNextIndexPageDict(indexPageDict)
-    print("next page")
+t = td.Thread(target=crawlTask, daemon=True)
+t.start()
+s = ""
+while(s != "stop"):
+    s = input("")
+STOP_FLAG = True
