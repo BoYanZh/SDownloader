@@ -241,5 +241,10 @@ namespace SDownloader
             ws.imgKeys = imgKeysTextBox.Text.Split('|');
             saveCurrentSettings();
         }
+
+        private void browseButton_Click(object sender, EventArgs e)
+        {
+
+        }
     }
 }
